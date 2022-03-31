@@ -1,6 +1,7 @@
 package cn.hx.plugin.junkcode.task
 
 import cn.hx.plugin.junkcode.ext.JunkCodeConfig
+import cn.hx.plugin.junkcode.template.Dicts
 import cn.hx.plugin.junkcode.template.ManifestTemplate
 import cn.hx.plugin.junkcode.template.ResTemplate
 import com.squareup.javapoet.ClassName
@@ -14,6 +15,7 @@ import org.gradle.api.tasks.Nested
 import org.gradle.api.tasks.OutputDirectories
 import org.gradle.api.tasks.TaskAction
 
+import javax.lang.model.SourceVersion
 import javax.lang.model.element.Modifier
 
 class AndroidJunkCodeTask extends DefaultTask {
@@ -127,7 +129,7 @@ class AndroidJunkCodeTask extends DefaultTask {
     void generateActivity(String packageName, String activityPreName) {
         def javaDir = new File(outDir, "java")
         def className = activityPreName.capitalize() + "Activity"
-        def layoutName = "${config.resPrefix.toLowerCase()}${packageName.replace(".", "_")}_activity_${activityPreName}"
+        def layoutName = "${config.resPrefix.toLowerCase()}${packageName.replace(".", "_")}_activity_${activityPreName}".toLowerCase()
         generateLayout(layoutName)
         if (!config.excludeActivityJavaFile) {
             def typeBuilder = TypeSpec.classBuilder(className)
@@ -161,12 +163,12 @@ class AndroidJunkCodeTask extends DefaultTask {
     void generateRes() {
         //生成drawable
         for (int i = 0; i < config.drawableCount; i++) {
-            def drawableName = "${config.resPrefix.toLowerCase()}${generateName(i)}"
+            def drawableName = "${config.resPrefix.toLowerCase()}${generateName(i, false)}"
             generateDrawable(drawableName)
         }
         //生成string
         for (int i = 0; i < config.stringCount; i++) {
-            def name = "${config.resPrefix.toLowerCase()}${generateName(i)}"
+            def name = "${config.resPrefix.toLowerCase()}${generateName(i, false)}"
             def value = name
             addStringByFileIo(name, value)
         }
@@ -364,10 +366,14 @@ class AndroidJunkCodeTask extends DefaultTask {
      * @param index
      * @return
      */
-    static String generateName(int index) {
+    static String generateNameIntern(int index, boolean upperCase = true) {
         def sb = new StringBuffer()
-        for (i in 0..4) {
-            sb.append(abc[random.nextInt(abc.size())])
+        sb.append(Dicts.getRandomWord())
+
+        if (upperCase) {
+            sb.append(Dicts.getRandomWord().capitalize())
+        } else {
+            sb.append('_').append(Dicts.getRandomWord())
         }
         int temp = index
         while (temp >= 0) {
@@ -379,5 +385,14 @@ class AndroidJunkCodeTask extends DefaultTask {
         }
         sb.append(index.toString())
         return sb.toString()
+    }
+
+    static String generateName(int index, boolean upperCase = true) {
+        for (; ;) {
+            def name = generateNameIntern(index, upperCase)
+            if (SourceVersion.isIdentifier(name) && !SourceVersion.isKeyword(name)) {
+                return name
+            }
+        }
     }
 }

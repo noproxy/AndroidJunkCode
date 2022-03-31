@@ -8,3 +8,16 @@ dependencies {
     implementation 'com.squareup:javapoet:1.13.0'
     implementation 'com.android.tools.build:gradle:3.0.0'
 }
+
+publishing {
+    repositories {
+        maven {
+            name 'xal'
+            url 'https://maven.apuscn.com/nexus/content/repositories/android-xal-releases/'
+            credentials(PasswordCredentials) {
+                username 'yiyazhou'
+                password 'yiyazhou1234'
+            }
+        }
+    }
+}
